@@ -63,29 +63,38 @@ public class SellerDaoJDBC implements SellerDao {
 
     }
 
-    private Seller populateSeller(ResultSet rs, Department department) throws SQLException {
-        Seller seller = new Seller();
-        seller.setId(rs.getInt("Id"));
-        seller.setName(rs.getString("Name"));
-        seller.setEmail(rs.getString("Email"));
-        seller.setBirthDate(rs.getDate("BirthDate").toLocalDate());
-        seller.setBaseSalary(rs.getDouble("BaseSalary"));
-        seller.setDepartment(department);
-
-        return seller;
-    }
-
-    private Department populateDepartment(ResultSet rs) throws SQLException {
-        Department department = new Department();
-        department.setId(rs.getInt("DepartmentId"));
-        department.setName(rs.getString("DepName"));
-
-        return department;
-    }
-
     @Override
     public List<Seller> findAll() {
-        return List.of();
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            stmt = conn.prepareStatement("SELECT seller.*, department.Name as DepName "
+                    + "FROM seller INNER JOIN department "
+                    + "ON seller.DepartmentId = department.Id "
+                    + "ORDER BY Name");
+            rs = stmt.executeQuery();
+
+            List<Seller> sellers = new ArrayList<>();
+            Map<Integer, Department> map = new HashMap<>();
+
+            while (rs.next()) {
+                Department depto = map.get(rs.getInt("DepartmentId"));
+
+                if (depto == null) {
+                    depto = populateDepartment(rs);
+                    map.put(rs.getInt("DepartmentId"), depto);
+                }
+                Seller seller = populateSeller(rs, depto);
+                sellers.add(seller);
+            }
+            return sellers;
+        }catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }finally {
+            DB.closeStatement(stmt);
+            DB.closeResultSet(rs);
+        }
     }
 
     @Override
@@ -122,5 +131,25 @@ public class SellerDaoJDBC implements SellerDao {
             DB.closeStatement(stmt);
             DB.closeResultSet(rs);
         }
+    }
+
+    private Seller populateSeller(ResultSet rs, Department department) throws SQLException {
+        Seller seller = new Seller();
+        seller.setId(rs.getInt("Id"));
+        seller.setName(rs.getString("Name"));
+        seller.setEmail(rs.getString("Email"));
+        seller.setBirthDate(rs.getDate("BirthDate").toLocalDate());
+        seller.setBaseSalary(rs.getDouble("BaseSalary"));
+        seller.setDepartment(department);
+
+        return seller;
+    }
+
+    private Department populateDepartment(ResultSet rs) throws SQLException {
+        Department department = new Department();
+        department.setId(rs.getInt("DepartmentId"));
+        department.setName(rs.getString("DepName"));
+
+        return department;
     }
 }
