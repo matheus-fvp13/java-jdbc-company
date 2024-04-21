@@ -37,10 +37,15 @@ public class Program {
         System.out.println("New seller: " + newSeller);
 
         System.out.println();
-        System.out.println("===== TEST 5 - Seller Insert ------");
+        System.out.println("===== TEST 5 - Seller Update ------");
         seller = sellerDao.findById(1);
         seller.setName("Martha Waine");
         sellerDao.update(seller);
         System.out.println("Updated complete");
+
+        System.out.println();
+        System.out.println("===== TEST 6 - Deleter Insert ------");
+        sellerDao.deleteById(8);
+        System.out.println("Delete completed");
     }
 }
